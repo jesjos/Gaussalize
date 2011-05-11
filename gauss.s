@@ -158,9 +158,8 @@ outer1:
       beq   $t2, $t5, outer1_done # k < N ?
       # redan här borde vi kunna spara ner adressen till A[k][k]
       move  $a0, $t2            # a0 <= k
-      move  $a1, $t2            # a1 <= k
       jal   fetchaddress        # jump to fetchaddress and save position to $ra
-      nop
+      move  $a1, $t2            # a1 <= k DELAYSLOT
       move  $s2, $v0            # s2 <= adress till A[k][k]
       
       addi  $t1, $t2, 1       # j = k + 1
@@ -170,9 +169,9 @@ inner1:
       
       # A[k][j] = A[k][j] / A[k][k]
       move  $a0, $t2           # a0 <= k
-      move  $a1, $t1           # a1 <= j
       jal   fetchaddress
-      nop
+      move  $a1, $t1           # a1 <= j DELAYSLOT
+      
       lwc1  $f2, ($v0)        # f2 <= A[k][j]
       move  $t7, $v0          # sparar adressen till A[k][j]
       
@@ -215,24 +214,21 @@ inner3:
       
       # A[i][j] = A[i][j] - A[i][k] * A[k][j]
       move  $a0, $t0        # a0 <= i
-      move  $a1, $t1        # a1 <= j
       jal   fetchaddress
-      nop
+      move  $a1, $t1        # a1 <= j DELAYSLOT
       lwc1  $f4, ($v0)      # f4 <= A[i][j]
       move  $t6, $v0        # t6 <= adress till A[i][j]
       
       # f6 <= A[k][j]
       move  $a0, $t2
-      move  $a1, $t1
       jal   fetchaddress
-      nop
+      move  $a1, $t1 # DELAYSLOT
       lwc1  $f6, ($v0)      # f6 <= A[k][j]
       
       # f2 <= A[i][k]
       move $a0, $t0
-      move $a1, $t2
       jal fetchaddress
-      nop
+      move $a1, $t2 # DELAYSLOT
       lwc1 $f2, ($v0)
       
       # f3 <= A[i][k] * A[k][j]
@@ -253,9 +249,8 @@ inner3:
 inner3_done:
 # A[i][k] = 0.0
       move  $a0, $t0
-      move  $a1, $t2
       jal   fetchaddress        # jump to fetchaddress and save position to $ra
-      nop
+      move  $a1, $t2 # DELAYSLOT
       swc1  $f0, ($v0)
 
       addiu  $t0, $t0, 1       # i++
@@ -298,9 +293,8 @@ fetchaddress:
       mflo  $v0               # v0 <= a0 * N
       addu   $v0, $v0, $a1     # v0 <= v0 + a1
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      addu   $v0, $v0, $t3     # v0 <= v0 + A
       jr   $ra                # return
-      nop
+      addu   $v0, $v0, $t3     # v0 <= v0 + A DELAYSLOT
 
 #################### END OUR CODE
 ### End of text segment
