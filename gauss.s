@@ -28,6 +28,7 @@ eliminate:
 		sw		$ra, 0($sp)			# done saving registers
 		
     jal gaussalize
+    
 		lw		$ra, 0($sp)			# done restoring registers
 		addiu	$sp, $sp, 4			# remove stack frame
 
@@ -150,6 +151,7 @@ gaussalize:
 outer1:
       # redan här borde vi kunna spara ner adressen till A[k][k]
       addi  $t1, $t2, 1       # j = k + 1
+      
 inner1:
       # A[k][j] = A[k][j] / A[k][k]
       move  $a0, $t2           # a0 <= k
@@ -171,7 +173,8 @@ inner1:
       
       addi  $t1, $t1, 1       # j++
       blt   $t1, $t5, inner1  # if j != N, goto outer1
-      
+
+middle:    
 # A[k][k] = 1.0
       move  $a0, $t2          # a0 <= k
       move  $a1, $t2          # a1 <= k
