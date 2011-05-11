@@ -1,17 +1,16 @@
 ### Text segment
 		.text
 start:
-		la		$a0, matrix_4x4		# a0 = A (base address of matrix)
-		li		$a1, 4    		    # a1 = N (number of elements per row)
+		la		$a0, matrix_24x24		# a0 = A (base address of matrix)
+		li		$a1, 24    		    # a1 = N (number of elements per row)
 									# <debug>
-		jal 	print_matrix	    # print matrix before elimination
-		nop							# </debug>
-		jal 	eliminate			# triangularize matrix!
+#		jal 	print_matrix	    # print matrix before elimination
+#		nop							# </debug>
+		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-		jal 	print_matrix		# print matrix after elimination
-		nop							# </debug>
+#	  jal 	print_matrix		# print matrix after elimination
+#		nop							# </debug>
 		jal 	exit
-
 exit:
 		li   	$v0, 10          	# specify exit system call
       	syscall						# exit program
@@ -28,7 +27,7 @@ eliminate:
 		sw		$ra, 0($sp)			# done saving registers
 		
     jal gaussalize
-    
+    nop
 		lw		$ra, 0($sp)			# done restoring registers
 		addiu	$sp, $sp, 4			# remove stack frame
 
@@ -133,27 +132,41 @@ loop_s0:
 # t4 <= N - 1
 # t5 <= N
 # f1 <= 1
+# s1 <= adress till konstanter
+# s2 <= adress till A[k][k]
 
 gaussalize:
       
-      addiu $sp, $sp, -12
+      addiu $sp, $sp, -20
       sw    $ra, ($sp) 
       sw    $a0, 4($sp)
       sw    $a1, 8($sp)
+      sw    $s1, 12($sp)
+      sw    $s2, 16($sp)
+      
+      
       
       add   $t2, $zero, $zero   # k = 0
       add   $t3, $a0, $zero     # t3 <= A
       addi  $t4, $a1, -1        # t4 <= N - 1
       addi  $t5, $a1, 0         # t5 <= N
+      la    $s1, zero
       lwc1  $f0, zero           # f0 <= 0.0
       lwc1  $f1, one            # f1 <= 1.0
 
 outer1:
+      beq   $t2, $t5, outer1_done # k < N ?
       # redan här borde vi kunna spara ner adressen till A[k][k]
-      beq   $t2, $t5, outer1_done
+      move  $a0, $t2            # a0 <= k
+      move  $a1, $t2            # a1 <= k
+      jal   fetchaddress        # jump to fetchaddress and save position to $ra
+      nop
+      move  $s2, $v0            # s2 <= adress till A[k][k]
+      
       addi  $t1, $t2, 1       # j = k + 1
 inner1:
       beq   $t1, $t5, inner1_done   # if t1 == $t5 then j == N, goto inner1_done
+      nop
       
       # A[k][j] = A[k][j] / A[k][k]
       move  $a0, $t2           # a0 <= k
@@ -164,42 +177,47 @@ inner1:
       move  $t7, $v0          # sparar adressen till A[k][j]
       
       # läser in A[k][k]
-      move  $a1, $t2          # a1 <= k (a0 oförändrad!)
-      jal   fetchaddress
-      nop
-      lwc1  $f3, ($v0)        # f3 <= A[k][k]
+#      move  $a1, $t2          # a1 <= k (a0 oförändrad!)
+#      jal   fetchaddress
+#      nop
+#      lwc1  $f3, ($v0)        # f3 <= A[k][k]
       
+      lwc1  $f3, ($s2)
+        
       # f2 / f3
       div.s $f4, $f2, $f3
       swc1  $f4, ($t7)        # A[k][j] <= f2 / f3
       
       addi  $t1, $t1, 1       # j++
       j inner1
+      nop
 
 inner1_done:
 middle:
 # A[k][k] = 1.0
-      move  $a0, $t2          # a0 <= k
-      move  $a1, $t2          # a1 <= k
-      jal   fetchaddress      # v0 <= adressen till A[k][k]
-      swc1  $f1, ($v0)       # (v0) <= 1.0
+#      move  $a0, $t2          # a0 <= k
+#      move  $a1, $t2          # a1 <= k
+#      jal   fetchaddress      # v0 <= adressen till A[k][k]
+#      nop
+#      swc1  $f1, ($v0)       # (v0) <= 1.0
+
+      swc1  $f1, ($s2)
       
 # new loops
 
-      addi  $t0, $t2, 1     # i = k + 1      
+      addiu  $t0, $t2, 1     # i = k + 1      
 inner2:
-      beq   $t0, $t5, inner2_done  # if $t0 == $t5 then target
-      
-      addi  $t1, $t2, 1     # j = k + 1
+      beq   $t0, $t5, inner2_done  # i < N ?
+      addiu  $t1, $t2, 1     # j = k + 1
 inner3:
-      beq   $t1, $t5, inner3_done  # if $t1 == $5 then inner3_done
-      
+      beq   $t1, $t5, inner3_done  # j < N?
       # <---- begin float arithmetics ---->
       
       # A[i][j] = A[i][j] - A[i][k] * A[k][j]
       move  $a0, $t0        # a0 <= i
       move  $a1, $t1        # a1 <= j
       jal   fetchaddress
+      nop
       lwc1  $f4, ($v0)      # f4 <= A[i][j]
       move  $t6, $v0        # t6 <= adress till A[i][j]
       
@@ -207,12 +225,14 @@ inner3:
       move  $a0, $t2
       move  $a1, $t1
       jal   fetchaddress
+      nop
       lwc1  $f6, ($v0)      # f6 <= A[k][j]
       
       # f2 <= A[i][k]
       move $a0, $t0
       move $a1, $t2
       jal fetchaddress
+      nop
       lwc1 $f2, ($v0)
       
       # f3 <= A[i][k] * A[k][j]
@@ -226,33 +246,40 @@ inner3:
       
       # <---- end float arithmetics ---->
       
-      addi  $t1, $t1, 1       # j++
+      addiu  $t1, $t1, 1       # j++
       j inner3
+      nop
       
 inner3_done:
 # A[i][k] = 0.0
       move  $a0, $t0
       move  $a1, $t2
       jal   fetchaddress        # jump to fetchaddress and save position to $ra
+      nop
       swc1  $f0, ($v0)
 
-      addi  $t0, $t0, 1       # i++
+      addiu  $t0, $t0, 1       # i++
       j inner2
+      nop
       
 # End of outer for-loop
 inner2_done:
-      addi  $t2, $t2, 1       # k++
+      addiu  $t2, $t2, 1       # k++
       
       j     outer1
+      nop
 outer1_done:
 # Restore shit from stack
       lw    $ra, 0($sp)
       lw    $a0, 4($sp)
-      lw    $a1, 8($sp)   # 
+      lw    $a1, 8($sp)
+      lw    $s1, 12($sp)   # 
       
-      addiu $sp, $sp, 12
+      
+      addiu $sp, $sp, 16
       
       jr    $ra         # jump to $ra
+      nop
       
       
 ##########################################################
@@ -269,10 +296,11 @@ outer1_done:
 fetchaddress:
       multu $a0, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
-      add   $v0, $v0, $a1     # v0 <= v0 + a1
+      addu   $v0, $v0, $a1     # v0 <= v0 + a1
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      add   $v0, $v0, $t3     # v0 <= v0 + A
+      addu   $v0, $v0, $t3     # v0 <= v0 + A
       jr   $ra                # return
+      nop
 
 #################### END OUR CODE
 ### End of text segment
