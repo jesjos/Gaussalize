@@ -223,8 +223,12 @@ inner3:
       bltu  $t0, $t5, inner2  # if i < N, goto inner2
 
 # End of outer for-loop
+		  move	$a0, $t3		# a0 = A (base address of matrix)
+		  li		$a1, 4    		    # a1 = N (number of elements per row)
+		  jal 	print_matrix	    # print matrix before elimination
+		  nop
       addi  $t2, $t2, 1       # k++
-      bltu  $t5, $t2, outer1  # if $t4 != $t2 then outer1
+      bltu  $t2, $t5, outer1  # if $t2 < $t5 then outer1
       
 # Restore shit from stack
       lw    $ra, 0($sp)
