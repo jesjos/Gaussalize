@@ -28,8 +28,7 @@ eliminate:
 		sw		$ra, 0($sp)			# done saving registers
 		
     jal gaussalize
-
-		lw		$ra, 0($sp)			# done restoring registers/Users/jesper/Downloads/gauss_template.s
+		lw		$ra, 0($sp)			# done restoring registers
 		addiu	$sp, $sp, 4			# remove stack frame
 
 		jr		$ra					# return from subroutine
@@ -86,7 +85,7 @@ print_matrix:
 		sw      $s2,  12($sp)
 		sw		$s1,  8($sp)
 		sw		$s0,  4($sp) 
-		sw		$a0,  0($sp)		# done saving registers   
+		sw		$a0,  0($sp)		# done saving registers
 
 		move	$s2,  $a0			# s2 = a0 (array pointer)
 		move	$s1,  $zero			# s1 = 0  (row index)
@@ -121,7 +120,7 @@ loop_s0:
 		addiu	$sp,  $sp, 20		# remove stack frame
 
 		jr		$ra					# return from subroutine
-		nop							# this is the delay slot associated with all types of jump
+		nop							# this is the delay slot associated with all types of jumps
 		
 #################### OUR CODE
 
@@ -135,6 +134,12 @@ loop_s0:
 # f1 <= 1
 
 gaussalize:
+      
+      addiu $sp, $sp, -12
+      sw    $ra, ($sp) 
+      sw    $a0, 4($sp)
+      sw    $a1, 8($sp)
+      
       add   $t2, $zero, $zero   # k = 0
       add   $t3, $a0, $zero     # t3 <= A
       addi  $t4, $a1, -1        # t4 <= N - 1
@@ -150,12 +155,14 @@ inner1:
       move  $a0, $t2           # a0 <= k
       move  $a1, $t1           # a1 <= j
       jal   fetchaddress
+      nop
       lwc1  $f2, ($v0)        # f2 <= A[k][j]
       move  $t7, $v0          # sparar adressen till A[k][j]
       
       # läser in A[k][k]
       move  $a1, $t2          # a1 <= k (a0 oförändrad!)
       jal   fetchaddress
+      nop
       lwc1  $f3, ($v0)        # f3 <= A[k][k]
       
       # f2 / f3
@@ -219,6 +226,13 @@ inner3:
       addi  $t2, $t2, 1       # k++
       bne   $t4, $t2, outer1  # if $t4 != $t2 then outer1
       
+# Restore shit from stack
+      lw    $ra, 0($sp)
+      lw    $a0, 4($sp)
+      lw    $a1, 8($sp)   # 
+      
+      addiu $sp, $sp, 12
+      
       jr    $ra         # jump to $ra
       
       
@@ -259,6 +273,9 @@ spaces:
 		.asciiz "   "   			# spaces to insert between numbers
 newline:
 		.asciiz "\n"  				# newline
+		
+message:
+    .asciiz "HEIKON BACON"
 
 ## Input matrix: (4x4) ##
 matrix_4x4:	
