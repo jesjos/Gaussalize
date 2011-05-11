@@ -170,7 +170,7 @@ inner1:
       swc1  $f4, ($t7)        # A[k][j] <= f2 / f3
       
       addi  $t1, $t1, 1       # j++
-      bne   $t1, $t5, inner1  # if j != k, goto outer1
+      blt   $t1, $t5, inner1  # if j != N, goto outer1
       
 # A[k][k] = 1.0
       move  $a0, $t2          # a0 <= k
@@ -211,7 +211,7 @@ inner3:
       # <---- end float arithmetics ---->
       
       addi  $t1, $t1, 1       # j++
-      bne   $t1, $t5, inner3  # if t5 < N, goto inner3
+      bltu  $t1, $t5, inner3  # if j < N, goto inner3
       
 # A[i][k] = 0.0
       move  $a0, $t0
@@ -220,11 +220,11 @@ inner3:
       swc1  $f0, ($v0)
 
       addi  $t0, $t0, 1       # i++
-      bne   $t0, $t5, inner2  # if i < N, goto inner2
+      bltu  $t0, $t5, inner2  # if i < N, goto inner2
 
 # End of outer for-loop
       addi  $t2, $t2, 1       # k++
-      bne   $t4, $t2, outer1  # if $t4 != $t2 then outer1
+      bltu  $t5, $t2, outer1  # if $t4 != $t2 then outer1
       
 # Restore shit from stack
       lw    $ra, 0($sp)
