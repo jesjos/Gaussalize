@@ -150,9 +150,11 @@ gaussalize:
 
 outer1:
       # redan här borde vi kunna spara ner adressen till A[k][k]
+      beq   $t2, $t5, outer1_done
       addi  $t1, $t2, 1       # j = k + 1
-      
 inner1:
+      beq   $t1, $t5, inner1_done   # if t2 == $t5 then target
+      
       # A[k][j] = A[k][j] / A[k][k]
       move  $a0, $t2           # a0 <= k
       move  $a1, $t1           # a1 <= j
@@ -172,9 +174,10 @@ inner1:
       swc1  $f4, ($t7)        # A[k][j] <= f2 / f3
       
       addi  $t1, $t1, 1       # j++
-      blt   $t1, $t5, inner1  # if j != N, goto outer1
+      j inner1
 
-middle:    
+inner1_done:
+middle:
 # A[k][k] = 1.0
       move  $a0, $t2          # a0 <= k
       move  $a1, $t2          # a1 <= k
@@ -183,10 +186,14 @@ middle:
       
 # new loops
 
-      addi  $t0, $t2, 1     # i = k + 1
+      addi  $t0, $t2, 1     # i = k + 1      
 inner2:
+      beq   $t0, $t5, inner2_done  # if $t0 == $t5 then target
+      
       addi  $t1, $t2, 1     # j = k + 1
 inner3:
+      beq   $t1, $t5, inner3_done  # if $t1 == $5 then inner3_done
+      
       # <---- begin float arithmetics ---->
       
       # A[i][j] = A[i][j] - A[i][k] * A[k][j]
@@ -214,8 +221,9 @@ inner3:
       # <---- end float arithmetics ---->
       
       addi  $t1, $t1, 1       # j++
-      bltu  $t1, $t5, inner3  # if j < N, goto inner3
+      j inner3
       
+inner3_done:
 # A[i][k] = 0.0
       move  $a0, $t0
       move  $a1, $t2
@@ -223,16 +231,14 @@ inner3:
       swc1  $f0, ($v0)
 
       addi  $t0, $t0, 1       # i++
-      bltu  $t0, $t5, inner2  # if i < N, goto inner2
-
-# End of outer for-loop
-		  move	$a0, $t3		# a0 = A (base address of matrix)
-		  li		$a1, 4    		    # a1 = N (number of elements per row)
-		  jal 	print_matrix	    # print matrix before elimination
-		  nop
-      addi  $t2, $t2, 1       # k++
-      bltu  $t2, $t5, outer1  # if $t2 < $t5 then outer1
+      j inner2
       
+# End of outer for-loop
+inner2_done:
+      addi  $t2, $t2, 1       # k++
+      
+      j     outer1
+outer1_done:
 # Restore shit from stack
       lw    $ra, 0($sp)
       lw    $a0, 4($sp)
