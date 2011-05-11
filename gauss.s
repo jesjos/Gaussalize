@@ -187,9 +187,8 @@ inner1:
       div.s $f4, $f2, $f3
       swc1  $f4, ($t7)        # A[k][j] <= f2 / f3
       
-      addi  $t1, $t1, 1       # j++
       j inner1
-      nop
+      addi  $t1, $t1, 1       # j++
 
 inner1_done:
 middle:
@@ -291,10 +290,10 @@ outer1_done:
 fetchaddress:
       multu $a0, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
-      addu   $v0, $v0, $a1     # v0 <= v0 + a1
+      addu  $v0, $v0, $a1     # v0 <= v0 + a1
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      jr   $ra                # return
-      addu   $v0, $v0, $t3     # v0 <= v0 + A DELAYSLOT
+      jr    $ra               # return
+      addu  $v0, $v0, $t3     # v0 <= v0 + A DELAYSLOT
 
 #################### END OUR CODE
 ### End of text segment
