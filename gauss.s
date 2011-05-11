@@ -153,7 +153,7 @@ outer1:
       beq   $t2, $t5, outer1_done
       addi  $t1, $t2, 1       # j = k + 1
 inner1:
-      beq   $t1, $t5, inner1_done   # if t2 == $t5 then target
+      beq   $t1, $t5, inner1_done   # if t1 == $t5 then j == N, goto inner1_done
       
       # A[k][j] = A[k][j] / A[k][k]
       move  $a0, $t2           # a0 <= k
@@ -209,8 +209,14 @@ inner3:
       jal   fetchaddress
       lwc1  $f6, ($v0)      # f6 <= A[k][j]
       
+      # f2 <= A[i][k]
+      move $a0, $t0
+      move $a1, $t2
+      jal fetchaddress
+      lwc1 $f2, ($v0)
+      
       # f3 <= A[i][k] * A[k][j]
-      mul.s $f3, $f2, $f4
+      mul.s $f3, $f2, $f6
       
       # f5 <= A[i][j] - f3
       sub.s $f5, $f4, $f3
