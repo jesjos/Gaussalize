@@ -83,10 +83,13 @@ loop_s0:
 
 gaussalize:
       
-      addiu $sp, $sp, -12
+      addiu $sp, $sp, -20
       sw    $ra, ($sp) 
       sw    $a0, 4($sp)
       sw    $a1, 8($sp)
+      sw    $s0, 12($sp)
+      sw    $s1, 16($sp) 
+      # done saving registers
       
       add   $t2, $zero, $zero   # k = 0
       add   $t3, $a0, $zero     # t3 <= A
