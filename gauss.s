@@ -99,41 +99,44 @@ outer1:
       # redan här borde vi kunna spara ner adressen till A[k][k]
       beq   $t2, $t5, outer1_done
       nop
-      addi  $t1, $t2, 1       # j = k + 1
+      addiu $t1, $t2, 1       # j = k + 1
+      
+      # laddar in A[k][0]
+      move $a0, $t2   # a0 <= k
+      move $a1, $zero # a1 <= 0
+      jal fetchaddress
+      
+      # beräknar slutadress [s0]
+      sll   $s0, $t5, 2     # s0 <= N*4
+      addu  $s0, $s0, $v0   # s0 <= A[k][0] + N*4
+      
+      # beräknar vi &A[k][j]
+      sll   $t1, $t1, 2     # j <= 4*j
+      addu  $t1, $v0, $t1   # j <= A[k][0] + j*4
+      
+      # tar fram A[k][k]
+      sll   $s1, $t2, 2     # s1 <= 4*k
+      addu  $s1, $s1, $s0   # s1 <= &A[k][k]
+      lwc1  $f3, ($s1)      # f3 <= A[k][k]
+      
 inner1:
-      beq   $t1, $t5, inner1_done   # if t1 == $t5 then j == N, goto inner1_done
+      beq   $t1, $s0, inner1_done   # if t1 == s0 then j == A[k+1][0], goto inner1_done
       nop
       
-      # A[k][j] = A[k][j] / A[k][k]
-      move  $a0, $t2           # a0 <= k
-      move  $a1, $t1           # a1 <= j
-      jal   fetchaddress
-      nop
-      lwc1  $f2, ($v0)        # f2 <= A[k][j]
-      move  $t7, $v0          # sparar adressen till A[k][j]
-      
-      # läser in A[k][k]
-      move  $a1, $t2          # a1 <= k (a0 oförändrad!)
-      jal   fetchaddress
-      nop
-      lwc1  $f3, ($v0)        # f3 <= A[k][k]
+      lwc1  $f2, ($t1)        # f2 <= A[k][j]
       
       # f2 / f3
       div.s $f4, $f2, $f3
-      swc1  $f4, ($t7)        # A[k][j] <= f2 / f3
+      swc1  $f4, ($t1)        # A[k][j] <= f2 / f3
       
-      addi  $t1, $t1, 1       # j++
+      addiu  $t1, $t1, 4      # j <= j + 4
       j inner1
       nop
 
 inner1_done:
 middle:
 # A[k][k] = 1.0
-      move  $a0, $t2          # a0 <= k
-      move  $a1, $t2          # a1 <= k
-      jal   fetchaddress      # v0 <= adressen till A[k][k]
-      nop
-      swc1  $f1, ($v0)       # (v0) <= 1.0
+      swc1  $f1, ($s1)       # (v0) <= 1.0
       
 # new loops
 
