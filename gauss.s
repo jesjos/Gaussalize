@@ -188,11 +188,14 @@ inner1:
       swc1  $f4, ($t7)        # A[k][j] <= f2 / f3
       
       j inner1
-      addi  $t1, $t1, 1       # j++
+
 
 inner1_done:
 middle:
 # A[k][k] = 1.0
+
+#     Här kan vi använda adressen till A[k][k] som vi sparade undan tidigare
+
 #      move  $a0, $t2          # a0 <= k
 #      move  $a1, $t2          # a1 <= k
 #      jal   fetchaddress      # v0 <= adressen till A[k][k]
@@ -205,7 +208,7 @@ middle:
 
       addiu  $t0, $t2, 1     # i = k + 1      
 inner2:
-      beq   $t0, $t5, inner2_done  # i < N ?
+      beq    $t0, $t5, inner2_done  # i < N ?
       addiu  $t1, $t2, 1     # j = k + 1
 inner3:
       beq   $t1, $t5, inner3_done  # j < N?
@@ -229,6 +232,11 @@ inner3:
       jal fetchaddress
       move $a1, $t2 # DELAYSLOT
       lwc1 $f2, ($v0)
+      
+      #######
+      # Vi borde kunna spara ner adressen till A[i][k] till register redan här
+      # och använda när vi går till inner3_done
+      #######
       
       # f3 <= A[i][k] * A[k][j]
       mul.s $f3, $f2, $f6
