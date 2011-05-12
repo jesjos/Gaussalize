@@ -4,70 +4,17 @@ start:
 		la		$a0, matrix_24x24		# a0 = A (base address of matrix)
 		li		$a1, 24   		    # a1 = N (number of elements per row)
 									# <debug>
-		jal 	print_matrix	    # print matrix before elimination
-		nop							# </debug>
-		jal 	eliminate			# triangularize matrix!
+#		jal 	print_matrix	    # print matrix before elimination
+#		nop							# </debug>
+		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-		jal 	print_matrix		# print matrix after elimination
-		nop							# </debug>
+#		jal 	print_matrix		# print matrix after elimination
+#		nop							# </debug>
 		jal 	exit
     nop
 exit:
 		li   	$v0, 10          	# specify exit system call
     syscall						# exit program
-
-################################################################################
-# eliminate - Triangularize matrix.
-#
-# Args:		$a0  - base address of matrix (A)
-#			$a1  - number of elements per row (N)
-
-eliminate:
-		# If necessary, create stack frame, and save return address from ra
-		addiu	$sp, $sp, -4		# allocate stack frame
-		sw		$ra, 0($sp)			# done saving registers
-		
-    jal gaussalize
-    nop
-		lw		$ra, 0($sp)			# done restoring registers
-		addiu	$sp, $sp, 4			# remove stack frame
-
-		jr		$ra					# return from subroutine
-		nop							# this is the delay slot associated with all types of jumps
-
-################################################################################
-# getelem - Get address and content of matrix element A[a][b].
-#
-# Argument registers $a0..$a3 are preserved across calls
-#
-# Args:		$a0  - base address of matrix (A)
-#			$a1  - number of elements per row (N)
-#			$a2  - row number (a)
-#			$a3  - column number (b)
-#						
-# Returns:	$v0  - Address to A[a][b]
-#			$f0  - Contents of A[a][b] (single precision)
-getelem:
-		addiu	$sp, $sp, -12		# allocate stack frame
-		sw		$s2, 8($sp)
-		sw		$s1, 4($sp)
-		sw		$s0, 0($sp)			# done saving registers
-		
-		sll		$s2, $a1, 2			# s2 = 4*N (number of bytes per row)
-		multu	$a2, $s2			# result will be 32-bit unless the matrix is huge
-		mflo	$s1					# s1 = a*s2
-		addu	$s1, $s1, $a0		# Now s1 contains address to row a
-		sll		$s0, $a3, 2			# s0 = 4*b (byte offset of column b)
-		addu	$v0, $s1, $s0		# Now we have address to A[a][b] in v0...
-		l.s		$f0, 0($v0)		    # ... and contents of A[a][b] in f0.
-		
-		lw		$s2, 8($sp)
-		lw		$s1, 4($sp)
-		lw		$s0, 0($sp)			# done restoring registers
-		addiu	$sp, $sp, 12		# remove stack frame
-		
-		jr		$ra					# return from subroutine
-		nop							# this is the delay slot associated with all types of jumps
 
 ################################################################################
 # print_matrix
