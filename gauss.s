@@ -10,7 +10,7 @@ start:
 		nop							# <debug>
 #		jal 	print_matrix		# print matrix after elimination
 #		nop							# </debug>
-		jal 	exit
+    jal 	exit
     nop
 exit:
 		li   	$v0, 10          	# specify exit system call
@@ -83,12 +83,16 @@ loop_s0:
 
 gaussalize:
       
-      addiu $sp, $sp, -20
+      addiu $sp, $sp, -32
       sw    $ra, ($sp) 
       sw    $a0, 4($sp)
       sw    $a1, 8($sp)
       sw    $s0, 12($sp)
       sw    $s1, 16($sp) 
+      sw    $s2, 20($sp)
+      sw    $s3, 24($sp)
+      sw    $s4, 28($sp)
+      
       # done saving registers
       
       add   $t2, $zero, $zero   # k = 0
@@ -211,13 +215,18 @@ inner2_done:
       addi  $t2, $t2, 1       # k++
 outer1_done:
 # Restore shit from stack
-      lw    $ra, 0($sp)
+      lw    $ra, ($sp) 
       lw    $a0, 4($sp)
-      lw    $a1, 8($sp)   # 
+      lw    $a1, 8($sp)
+      lw    $s0, 12($sp)
+      lw    $s1, 16($sp) 
+      lw    $s2, 20($sp)
+      lw    $s3, 24($sp)
+      lw    $s4, 28($sp)
       
       jr    $ra         # jump to $ra
       # DB
-      addiu $sp, $sp, 12
+      addiu $sp, $sp, 32
       
 ##########################################################
 # fetchrow
