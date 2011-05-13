@@ -1,15 +1,15 @@
 ### Text segment
 		.text
 start:
-		la		$a0, matrix_4x4		# a0 = A (base address of matrix)
-		li		$a1, 4   		    # a1 = N (number of elements per row)
+		la		$a0, matrix_24x24		# a0 = A (base address of matrix)
+		li		$a1, 24   		    # a1 = N (number of elements per row)
 									# <debug>
 #		jal 	print_matrix	    # print matrix before elimination
 #		nop							# </debug>
 		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-		jal 	print_matrix		# print matrix after elimination
-		nop							# </debug>
+#		jal 	print_matrix		# print matrix after elimination
+#		nop							# </debug>
 		jal 	exit
     nop
 exit:
@@ -158,17 +158,15 @@ init1:
       jal   fetchaddress
       nop
       move  $s0, $v0
-    
-inner2:
-      beq   $t0, $t5, inner2_done  # i == N ?
-      nop
       
       # s1 = &A[i][0]
       move  $a0, $t0
-      move  $a1, $zero
       jal   fetchaddress
       nop
       move  $s1, $v0
+inner2:
+      beq   $t0, $t5, inner2_done  # i == N ?
+      nop
     
       # s2 = &A[i][k]
       sll   $s2, $t2, 2     # s2 = k*4
@@ -204,7 +202,8 @@ inner3:
       
 inner3_done:
       swc1 $f0, ($s2)
-      addiu $t0, $t0, 1
+      addiu $t0, $t0, 1 # i++
+      move $s1, $s3
       j inner2
       nop
 # End of outer for-loop
