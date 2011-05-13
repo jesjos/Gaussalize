@@ -119,7 +119,7 @@ outer1:
       
       # tar fram A[k][k]
       sll   $s1, $t2, 2     # s1 <= 4*k
-      addu  $s1, $s1, $s0   # s1 <= &A[k][k]
+      addu  $s1, $s1, $v0   # s1 <= &A[k][k]
       lwc1  $f3, ($s1)      # f3 <= A[k][k]
       
 inner1:
@@ -244,13 +244,6 @@ fetchaddress:
 
 ### Data segment 
 		.data
-		
-### Constants
-
-zero: 
-    .float 0      
-one:  
-    .float 1.0
 
 ### String constants
 spaces:
@@ -260,6 +253,13 @@ newline:
 		
 message:
     .asciiz "HEIKON BACON"
+    
+### Constants
+
+zero: 
+    .float 0      
+one:  
+    .float 1.0
 
 ## Input matrix: (4x4) ##
 matrix_4x4:	
