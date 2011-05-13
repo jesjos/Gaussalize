@@ -8,8 +8,8 @@ start:
 #		nop							# </debug>
 		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-#		jal 	print_matrix		# print matrix after elimination
-#		nop							# </debug>
+		jal 	print_matrix		# print matrix after elimination
+		nop							# </debug>
 		jal 	exit
     nop
 exit:
