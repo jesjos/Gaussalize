@@ -243,13 +243,6 @@ fetchaddress:
 ### Data segment 
 		.data
 		
-### Constants
-
-zero: 
-    .float 0      
-one:  
-    .float 1.0
-
 ### String constants
 spaces:
 		.asciiz "   "   			# spaces to insert between numbers
@@ -258,6 +251,13 @@ newline:
 		
 message:
     .asciiz "HEIKON BACON"
+    
+### Constants
+
+zero: 
+    .float 0      
+one:  
+    .float 1.0
 
 ## Input matrix: (4x4) ##
 matrix_4x4:	
