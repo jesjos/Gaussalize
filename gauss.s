@@ -119,7 +119,7 @@ outer1:
       
       # tar fram A[k][k]
       sll   $s1, $t2, 2     # s1 <= 4*k
-      addu  $s1, $s1, $s0   # s1 <= &A[k][k]
+      addu  $s1, $s1, $v0   # s1 <= &A[k][k]
       lwc1  $f3, ($s1)      # f3 <= A[k][k]
       
 inner1:
