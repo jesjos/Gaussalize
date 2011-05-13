@@ -105,10 +105,9 @@ outer1:
       addiu $t1, $t2, 1       # j = k + 1
       
       # laddar in A[k][0]
-      move $a0, $t2   # a0 <= k
-      move $a1, $zero # a1 <= 0
       jal fetchrow
-      nop
+      #DB
+      move $a0, $t2   # a0 <= k
       
       # beräknar slutadress [s0]
       sll   $s0, $t5, 2     # s0 <= N*4
@@ -133,9 +132,9 @@ inner1:
       div.s $f4, $f2, $f3
       swc1  $f4, ($t1)        # A[k][j] <= f2 / f3
       
-      addiu  $t1, $t1, 4      # j <= j + 4
       j inner1
-      nop
+      # DB
+      addiu  $t1, $t1, 4      # j <= j + 4
 
 inner1_done:
 middle:
@@ -153,21 +152,20 @@ init1:
       addi  $t0, $t2, 1     # i = k + 1
     
       # hämta s0 = &A[k][0]
-      move  $a0, $t2
-      move  $a1, $zero
       jal   fetchrow
-      nop
+      # DB
+      move  $a0, $t2
       move  $s0, $v0
       
       # s1 = &A[i][0]
-      move  $a0, $t0
       jal   fetchrow
-      nop
+      # DB
+      move  $a0, $t0
       move  $s1, $v0
 inner2:
       beq   $t0, $t5, inner2_done  # i == N ?
-      nop
-    
+      # DB
+      
       # s2 = &A[i][k]
       sll   $s2, $t2, 2     # s2 = k*4
       add   $s2, $s1, $s2   # s2 = &A[i][0] + k*4
@@ -196,32 +194,30 @@ inner3:
       swc1  $f2, ($t1)
  
       addiu $t1, $t1, 4
-      addiu $s4, $s4, 4
       j inner3
-      nop
+      # DB
+      addiu $s4, $s4, 4
       
 inner3_done:
       swc1 $f0, ($s2)
       addiu $t0, $t0, 1 # i++
-      move $s1, $s3
       j inner2
-      nop
+      # DB
+      move $s1, $s3
 # End of outer for-loop
-inner2_done:
-      addi  $t2, $t2, 1       # k++
-      
+inner2_done:      
       j     outer1
-      nop
+      # DB
+      addi  $t2, $t2, 1       # k++
 outer1_done:
 # Restore shit from stack
       lw    $ra, 0($sp)
       lw    $a0, 4($sp)
       lw    $a1, 8($sp)   # 
       
-      addiu $sp, $sp, 12
-      
       jr    $ra         # jump to $ra
-      nop
+      # DB
+      addiu $sp, $sp, 12
       
 ##########################################################
 # fetchrow
@@ -237,9 +233,10 @@ fetchrow:
       multu $a0, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      add   $v0, $v0, $t3     # v0 <= v0 + A
       jr   $ra                # return
-      nop
+      # DB
+      addu   $v0, $v0, $t3     # v0 <= v0 + A
+      
 #################### END OUR CODE
 ### End of text segment
 
