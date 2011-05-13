@@ -1,15 +1,15 @@
 ### Text segment
 		.text
 start:
-		la		$a0, matrix_24x24		# a0 = A (base address of matrix)
-		li		$a1, 24   		    # a1 = N (number of elements per row)
+		la		$a0, matrix_4x4		# a0 = A (base address of matrix)
+		li		$a1, 4   		    # a1 = N (number of elements per row)
 									# <debug>
 #		jal 	print_matrix	    # print matrix before elimination
 #		nop							# </debug>
 		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-#		jal 	print_matrix		# print matrix after elimination
-#		nop							# </debug>
+		jal 	print_matrix		# print matrix after elimination
+		nop							# </debug>
 		jal 	exit
     nop
 exit:
@@ -143,65 +143,62 @@ middle:
       
 # new loops
 
-      addi  $t0, $t2, 1     # i = k + 1      
-inner2:
-      beq   $t0, $t5, inner2_done  # if $t0 == $t5 then target
-      nop
-      
-      addi  $t1, $t2, 1     # j = k + 1
-inner3:
-      beq   $t1, $t5, inner3_done  # if $t1 == $5 then inner3_done
-      nop
-      
-      # <---- begin float arithmetics ---->
-      
-      # A[i][j] = A[i][j] - A[i][k] * A[k][j]
-      move  $a0, $t0        # a0 <= i
-      move  $a1, $t1        # a1 <= j
-      jal   fetchaddress
-      nop
-      lwc1  $f4, ($v0)      # f4 <= A[i][j]
-      move  $t6, $v0        # t6 <= adress till A[i][j]
-      
-      # f6 <= A[k][j]
-      move  $a0, $t2
-      move  $a1, $t1
-      jal   fetchaddress
-      nop
-      lwc1  $f6, ($v0)      # f6 <= A[k][j]
-      
-      # f2 <= A[i][k]
-      move $a0, $t0
-      move $a1, $t2
-      jal fetchaddress
-      nop
-      lwc1 $f2, ($v0)
-      
-      # f3 <= A[i][k] * A[k][j]
-      mul.s $f3, $f2, $f6
-      
-      # f5 <= A[i][j] - f3
-      sub.s $f5, $f4, $f3
-      
-      # A[i][j] <= f5
-      swc1  $f5, ($t6)
-      
-      # <---- end float arithmetics ---->
-      
-      addi  $t1, $t1, 1       # j++
-      j inner3
-      nop
-inner3_done:
-# A[i][k] = 0.0
-      move  $a0, $t0
-      move  $a1, $t2
-      jal   fetchaddress        # jump to fetchaddress and save position to $ra
-      nop
-      swc1  $f0, ($v0)
+# x = s0
+# y = s1
+# stop = s3
+# å = s4
 
-      addi  $t0, $t0, 1       # i++
+init1:
+      addi  $t0, $t2, 1     # i = k + 1
+    
+      # hämta s0 = &A[k][0]
+      move  $a0, $t2
+      move  $a1, $zero
+      jal   fetchaddress
+      move  $s0, $v0
+    
+inner2:
+      beq   $t0, $t5, inner2_done  # i == N ?
+    
+      # s1 = &A[i][0]
+      move  $a0, $t0
+      move  $a1, $zero
+      jal   fetchaddress
+      move  $s1, $v0
+    
+      # s2 = &A[i][k]
+      sll   $s2, $t2, 2     # s2 = k*4
+      add   $s2, $s1, $s2   # s2 = &A[i][0] + k*4
+    
+      # s3 = &A[i][0] + N * 4 <= slutadress
+      sll   $s3, $t5, 2
+      add   $s3, $s1, $s3
+    
+      # t1 = &A[i][k] + 4
+      addiu $t1, $t2, 4
+    
+      # s4 = &A[k][0] + 4*(k + 1)
+      addiu $s4, $t2, 1
+      sll   $s4, $s4, 2
+      addu  $s4, $s0, $s4
+
+inner3:
+      beq   $t1, $s3, inner3_done
+      lwc1  $f2, ($s4)     # f2 <= *å
+      lwc1  $f3, ($s2)      # f3 <= *z
+      lwc1  $f4, ($t1)      # f4 <= *j
+      mul.s $f2, $f2, $f3 # f2 *z * *å
+      sub.s $f2, $f4, $f2 # j <= j - f2
+      swc1  $f2, ($t1)
+ 
+      addiu $t2, $t1, 4
+      addiu $s4, $s4, 4
+      j inner3
+ 
+inner3_done:
+      swc1 $f0, ($s2)
+      addiu $t0, $t0, 1
       j inner2
-      nop
       
 # End of outer for-loop
 inner2_done:
