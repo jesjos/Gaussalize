@@ -107,7 +107,7 @@ outer1:
       # laddar in A[k][0]
       move $a0, $t2   # a0 <= k
       move $a1, $zero # a1 <= 0
-      jal fetchaddress
+      jal fetchrow
       nop
       
       # beräknar slutadress [s0]
@@ -155,13 +155,13 @@ init1:
       # hämta s0 = &A[k][0]
       move  $a0, $t2
       move  $a1, $zero
-      jal   fetchaddress
+      jal   fetchrow
       nop
       move  $s0, $v0
       
       # s1 = &A[i][0]
       move  $a0, $t0
-      jal   fetchaddress
+      jal   fetchrow
       nop
       move  $s1, $v0
 inner2:
@@ -224,20 +224,18 @@ outer1_done:
       nop
       
 ##########################################################
-# fetchaddress
-# hämtar adressen till ett matriselement A[x][y]
+# fetchrow
+# hämtar adressen till ett matriselement A[x][0]
 # 
 # args:
 #   a0: row
-#   a1: column
 #   t5: N rader/kolumner i matrisen
 #   t3: A - basadress till matrisen
 ##########################################################
 
-fetchaddress:
+fetchrow:
       multu $a0, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
-      add   $v0, $v0, $a1     # v0 <= v0 + a1
       sll   $v0, $v0, 2       # v0 <= v0 * 4
       add   $v0, $v0, $t3     # v0 <= v0 + A
       jr   $ra                # return
