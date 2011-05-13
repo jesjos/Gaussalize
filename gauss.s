@@ -1,15 +1,15 @@
 ### Text segment
 		.text
 start:
-		la		$a0, matrix_4x4		# a0 = A (base address of matrix)
-		li		$a1, 4   		    # a1 = N (number of elements per row)
+		la		$a0, matrix_24x24		# a0 = A (base address of matrix)
+		li		$a1, 24   		    # a1 = N (number of elements per row)
 									# <debug>
 #		jal 	print_matrix	    # print matrix before elimination
 #		nop							# </debug>
 		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-		jal 	print_matrix		# print matrix after elimination
-		nop							# </debug>
+#		jal 	print_matrix		# print matrix after elimination
+#		nop							# </debug>
 		jal 	exit
     nop
 exit:
@@ -108,6 +108,7 @@ outer1:
       move $a0, $t2   # a0 <= k
       move $a1, $zero # a1 <= 0
       jal fetchaddress
+      nop
       
       # beräknar slutadress [s0]
       sll   $s0, $t5, 2     # s0 <= N*4
@@ -155,11 +156,13 @@ init1:
       move  $a0, $t2
       move  $a1, $zero
       jal   fetchaddress
+      nop
       move  $s0, $v0
     
 inner2:
       beq   $t0, $t5, inner2_done  # i == N ?
-    
+      nop
+      
       # s1 = &A[i][0]
       move  $a0, $t0
       move  $a1, $zero
@@ -185,6 +188,8 @@ inner2:
 
 inner3:
       beq   $t1, $s3, inner3_done
+      nop
+      
       lwc1  $f2, ($s4)     # f2 <= *å
       lwc1  $f3, ($s2)      # f3 <= *z
       lwc1  $f4, ($t1)      # f4 <= *j
@@ -195,12 +200,13 @@ inner3:
       addiu $t1, $t1, 4
       addiu $s4, $s4, 4
       j inner3
- 
+      nop
+      
 inner3_done:
       swc1 $f0, ($s2)
       addiu $t0, $t0, 1
       j inner2
-      
+      nop
 # End of outer for-loop
 inner2_done:
       addi  $t2, $t2, 1       # k++
