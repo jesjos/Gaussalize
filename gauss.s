@@ -108,6 +108,7 @@ outer1:
       move $a0, $t2   # a0 <= k
       move $a1, $zero # a1 <= 0
       jal fetchaddress
+      nop
       
       # beräknar slutadress [s0]
       sll   $s0, $t5, 2     # s0 <= N*4
@@ -143,66 +144,69 @@ middle:
       
 # new loops
 
-      addi  $t0, $t2, 1     # i = k + 1      
-inner2:
-      beq   $t0, $t5, inner2_done  # if $t0 == $t5 then target
-      nop
-      
-      addi  $t1, $t2, 1     # j = k + 1
-inner3:
-      beq   $t1, $t5, inner3_done  # if $t1 == $5 then inner3_done
-      nop
-      
-      # <---- begin float arithmetics ---->
-      
-      # A[i][j] = A[i][j] - A[i][k] * A[k][j]
-      move  $a0, $t0        # a0 <= i
-      move  $a1, $t1        # a1 <= j
-      jal   fetchaddress
-      nop
-      lwc1  $f4, ($v0)      # f4 <= A[i][j]
-      move  $t6, $v0        # t6 <= adress till A[i][j]
-      
-      # f6 <= A[k][j]
+# x = s0
+# y = s1
+# stop = s3
+# å = s4
+
+init1:
+      addi  $t0, $t2, 1     # i = k + 1
+    
+      # hämta s0 = &A[k][0]
       move  $a0, $t2
-      move  $a1, $t1
+      move  $a1, $zero
       jal   fetchaddress
       nop
-      lwc1  $f6, ($v0)      # f6 <= A[k][j]
-      
-      # f2 <= A[i][k]
-      move $a0, $t0
-      move $a1, $t2
-      jal fetchaddress
+      move  $s0, $v0
+    
+inner2:
+      beq   $t0, $t5, inner2_done  # i == N ?
       nop
-      lwc1 $f2, ($v0)
       
-      # f3 <= A[i][k] * A[k][j]
-      mul.s $f3, $f2, $f6
+      # s1 = &A[i][0]
+      move  $a0, $t0
+      move  $a1, $zero
+      jal   fetchaddress
+      nop
+      move  $s1, $v0
+    
+      # s2 = &A[i][k]
+      sll   $s2, $t2, 2     # s2 = k*4
+      add   $s2, $s1, $s2   # s2 = &A[i][0] + k*4
+    
+      # s3 = &A[i][0] + N * 4 <= slutadress
+      sll   $s3, $t5, 2
+      add   $s3, $s1, $s3
+    
+      # t1 = &A[i][k] + 4
+      addiu $t1, $s2, 4
+    
+      # s4 = &A[k][0] + 4*(k + 1)
+      addiu $s4, $t2, 1
+      sll   $s4, $s4, 2
+      addu  $s4, $s0, $s4
+
+inner3:
+      beq   $t1, $s3, inner3_done
+      nop
       
-      # f5 <= A[i][j] - f3
-      sub.s $f5, $f4, $f3
-      
-      # A[i][j] <= f5
-      swc1  $f5, ($t6)
-      
-      # <---- end float arithmetics ---->
-      
-      addi  $t1, $t1, 1       # j++
+      lwc1  $f2, ($s4)     # f2 <= *å
+      lwc1  $f3, ($s2)      # f3 <= *z
+      lwc1  $f4, ($t1)      # f4 <= *j
+      mul.s $f2, $f2, $f3 # f2 *z * *å
+      sub.s $f2, $f4, $f2 # j <= j - f2
+      swc1  $f2, ($t1)
+ 
+      addiu $t1, $t1, 4
+      addiu $s4, $s4, 4
       j inner3
       nop
+      
 inner3_done:
-# A[i][k] = 0.0
-      move  $a0, $t0
-      move  $a1, $t2
-      jal   fetchaddress        # jump to fetchaddress and save position to $ra
-      nop
-      swc1  $f0, ($v0)
-
-      addi  $t0, $t0, 1       # i++
+      swc1 $f0, ($s2)
+      addiu $t0, $t0, 1
       j inner2
       nop
-      
 # End of outer for-loop
 inner2_done:
       addi  $t2, $t2, 1       # k++
@@ -244,7 +248,6 @@ fetchaddress:
 
 ### Data segment 
 		.data
-
 ### String constants
 spaces:
 		.asciiz "   "   			# spaces to insert between numbers
