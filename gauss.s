@@ -164,6 +164,7 @@ inner2:
       move  $a0, $t0
       move  $a1, $zero
       jal   fetchaddress
+      nop
       move  $s1, $v0
     
       # s2 = &A[i][k]
@@ -175,7 +176,7 @@ inner2:
       add   $s3, $s1, $s3
     
       # t1 = &A[i][k] + 4
-      addiu $t1, $t2, 4
+      addiu $t1, $s2, 4
     
       # s4 = &A[k][0] + 4*(k + 1)
       addiu $s4, $t2, 1
@@ -191,7 +192,7 @@ inner3:
       sub.s $f2, $f4, $f2 # j <= j - f2
       swc1  $f2, ($t1)
  
-      addiu $t2, $t1, 4
+      addiu $t1, $t1, 4
       addiu $s4, $s4, 4
       j inner3
  
