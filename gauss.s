@@ -1,16 +1,16 @@
 ### Text segment
 		.text
 start:
-		la		$a0, matrix_4x4		# a0 = A (base address of matrix)
-		li		$a1, 4   		    # a1 = N (number of elements per row)
+		la		$a0, matrix_24x24		# a0 = A (base address of matrix)
+		li		$a1, 24   		    # a1 = N (number of elements per row)
 									# <debug>
 #		jal 	print_matrix	    # print matrix before elimination
 #		nop							# </debug>
 		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-		jal 	print_matrix		# print matrix after elimination
-		nop							# </debug>
-		jal 	exit
+#		jal 	print_matrix		# print matrix after elimination
+#		nop							# </debug>
+    jal 	exit
     nop
 exit:
 		li   	$v0, 10          	# specify exit system call
@@ -83,12 +83,16 @@ loop_s0:
 
 gaussalize:
       
-      addiu $sp, $sp, -20
+      addiu $sp, $sp, -32
       sw    $ra, ($sp) 
       sw    $a0, 4($sp)
       sw    $a1, 8($sp)
       sw    $s0, 12($sp)
       sw    $s1, 16($sp) 
+      sw    $s2, 20($sp)
+      sw    $s3, 24($sp)
+      sw    $s4, 28($sp)
+      
       # done saving registers
       
       add   $t2, $zero, $zero   # k = 0
@@ -105,10 +109,9 @@ outer1:
       addiu $t1, $t2, 1       # j = k + 1
       
       # laddar in A[k][0]
+      jal fetchrow
+      #DB
       move $a0, $t2   # a0 <= k
-      move $a1, $zero # a1 <= 0
-      jal fetchaddress
-      nop
       
       # beräknar slutadress [s0]
       sll   $s0, $t5, 2     # s0 <= N*4
@@ -133,9 +136,9 @@ inner1:
       div.s $f4, $f2, $f3
       swc1  $f4, ($t1)        # A[k][j] <= f2 / f3
       
-      addiu  $t1, $t1, 4      # j <= j + 4
       j inner1
-      nop
+      # DB
+      addiu  $t1, $t1, 4      # j <= j + 4
 
 inner1_done:
 middle:
@@ -153,23 +156,20 @@ init1:
       addi  $t0, $t2, 1     # i = k + 1
     
       # hämta s0 = &A[k][0]
+      jal   fetchrow
+      # DB
       move  $a0, $t2
-      move  $a1, $zero
-      jal   fetchaddress
-      nop
       move  $s0, $v0
-    
-inner2:
-      beq   $t0, $t5, inner2_done  # i == N ?
-      nop
       
       # s1 = &A[i][0]
+      jal   fetchrow
+      # DB
       move  $a0, $t0
-      move  $a1, $zero
-      jal   fetchaddress
-      nop
       move  $s1, $v0
-    
+inner2:
+      beq   $t0, $t5, inner2_done  # i == N ?
+      # DB
+      
       # s2 = &A[i][k]
       sll   $s2, $t2, 2     # s2 = k*4
       add   $s2, $s1, $s2   # s2 = &A[i][0] + k*4
@@ -198,51 +198,54 @@ inner3:
       swc1  $f2, ($t1)
  
       addiu $t1, $t1, 4
-      addiu $s4, $s4, 4
       j inner3
-      nop
+      # DB
+      addiu $s4, $s4, 4
       
 inner3_done:
       swc1 $f0, ($s2)
-      addiu $t0, $t0, 1
+      addiu $t0, $t0, 1 # i++
       j inner2
-      nop
+      # DB
+      move $s1, $s3
 # End of outer for-loop
-inner2_done:
-      addi  $t2, $t2, 1       # k++
-      
+inner2_done:      
       j     outer1
-      nop
+      # DB
+      addi  $t2, $t2, 1       # k++
 outer1_done:
 # Restore shit from stack
-      lw    $ra, 0($sp)
+      lw    $ra, ($sp) 
       lw    $a0, 4($sp)
-      lw    $a1, 8($sp)   # 
-      
-      addiu $sp, $sp, 12
+      lw    $a1, 8($sp)
+      lw    $s0, 12($sp)
+      lw    $s1, 16($sp) 
+      lw    $s2, 20($sp)
+      lw    $s3, 24($sp)
+      lw    $s4, 28($sp)
       
       jr    $ra         # jump to $ra
-      nop
+      # DB
+      addiu $sp, $sp, 32
       
 ##########################################################
-# fetchaddress
-# hämtar adressen till ett matriselement A[x][y]
+# fetchrow
+# hämtar adressen till ett matriselement A[x][0]
 # 
 # args:
 #   a0: row
-#   a1: column
 #   t5: N rader/kolumner i matrisen
 #   t3: A - basadress till matrisen
 ##########################################################
 
-fetchaddress:
+fetchrow:
       multu $a0, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
-      add   $v0, $v0, $a1     # v0 <= v0 + a1
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      add   $v0, $v0, $t3     # v0 <= v0 + A
       jr   $ra                # return
-      nop
+      # DB
+      addu   $v0, $v0, $t3     # v0 <= v0 + A
+      
 #################### END OUR CODE
 ### End of text segment
 
