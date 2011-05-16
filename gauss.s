@@ -8,8 +8,8 @@ start:
 #		nop							# </debug>
 		jal 	gaussalize			# triangularize matrix!
 		nop							# <debug>
-#		jal 	print_matrix		# print matrix after elimination
-#		nop							# </debug>
+#    jal   print_matrix    # print matrix after elimination
+#    nop             # </debug>
     jal 	exit
     nop
 exit:
@@ -30,7 +30,7 @@ exit:
 print_matrix:
 		addiu	$sp,  $sp, -20		# allocate stack frame
 		sw		$ra,  16($sp)
-		sw      $s2,  12($sp)
+		sw    $s2,  12($sp)
 		sw		$s1,  8($sp)
 		sw		$s0,  4($sp) 
 		sw		$a0,  0($sp)		# done saving registers
@@ -109,9 +109,12 @@ outer1:
       addiu $t1, $t2, 1       # j = k + 1
       
       # laddar in A[k][0]
-      jal fetchrow
-      #DB
-      move $a0, $t2   # a0 <= k
+      multu $t2, $t5          # a0 * N
+      mflo  $v0               # v0 <= a0 * N
+      sll   $v0, $v0, 2       # v0 <= v0 * 4
+      # DB
+      addu   $v0, $v0, $t3     # v0 <= v0 + A
+      
       
       # beräknar slutadress [s0]
       sll   $s0, $t5, 2     # s0 <= N*4
@@ -154,17 +157,21 @@ middle:
 
 init1:
       addi  $t0, $t2, 1     # i = k + 1
-    
-      # hämta s0 = &A[k][0]
-      jal   fetchrow
-      # DB
-      move  $a0, $t2
+      
+      multu $t2, $t5          # a0 * N
+      mflo  $v0               # v0 <= a0 * N
+      sll   $v0, $v0, 2       # v0 <= v0 * 4
+      addu   $v0, $v0, $t3     # v0 <= v0 + A
+      
       move  $s0, $v0
       
       # s1 = &A[i][0]
-      jal   fetchrow
+      multu $t0, $t5          # a0 * N
+      mflo  $v0               # v0 <= a0 * N
+      sll   $v0, $v0, 2       # v0 <= v0 * 4
       # DB
-      move  $a0, $t0
+      addu   $v0, $v0, $t3     # v0 <= v0 + A
+      
       move  $s1, $v0
 inner2:
       beq   $t0, $t5, inner2_done  # i == N ?
