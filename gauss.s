@@ -71,17 +71,26 @@ loop_s0:
 		nop							# this is the delay slot associated with all types of jumps
 		
 #################### OUR CODE
-
-# Gauss elimination
+#
+# Gauss triangulizer
+# Does not preserve floating point registers
+# Arguments:
+#   a0: base address of matrix
+#   a1: number of elements per row
+#
+# Register utilization:
 # t0 <= i
 # t1 <= j
 # t2 <= k
 # t3 <= A
 # t4 <= N - 1
 # t5 <= N
-# f1 <= 1
+# f0 <= 0.0
+# f1 <= 1.0
 
 gaussalize:
+      
+      # saving registers
       
       addiu $sp, $sp, -32
       sw    $ra, ($sp) 
@@ -95,6 +104,8 @@ gaussalize:
       
       # done saving registers
       
+      # initializing
+      
       add   $t2, $zero, $zero   # k = 0
       add   $t3, $a0, $zero     # t3 <= A
       addi  $t4, $a1, -1        # t4 <= N - 1
@@ -103,28 +114,26 @@ gaussalize:
       lwc1  $f1, one            # f1 <= 1.0
 
 outer1:
-      # redan här borde vi kunna spara ner adressen till A[k][k]
       beq   $t2, $t5, outer1_done
-      nop
       addiu $t1, $t2, 1       # j = k + 1
       
-      # laddar in A[k][0]
+      # loading &A[k][0]
       multu $t2, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      # DB
-      addu   $v0, $v0, $t3     # v0 <= v0 + A
+      # Delay slot
+      addu   $v0, $v0, $t3    # v0 <= v0 + A
       
       
-      # beräknar slutadress [s0]
+      # calculating &A[k][0] + N*4, which will be the ending address of the inner loop
       sll   $s0, $t5, 2     # s0 <= N*4
       addu  $s0, $s0, $v0   # s0 <= A[k][0] + N*4
       
-      # beräknar vi &A[k][j]
+      # calculating &A[k][j], which will be iterated over
       sll   $t1, $t1, 2     # j <= 4*j
       addu  $t1, $v0, $t1   # j <= A[k][0] + j*4
       
-      # tar fram A[k][k]
+      # loading A[k][k]
       sll   $s1, $t2, 2     # s1 <= 4*k
       addu  $s1, $s1, $v0   # s1 <= &A[k][k]
       lwc1  $f3, ($s1)      # f3 <= A[k][k]
@@ -140,7 +149,7 @@ inner1:
       swc1  $f4, ($t1)        # A[k][j] <= f2 / f3
       
       j inner1
-      # DB
+      # Delay slot
       addiu  $t1, $t1, 4      # j <= j + 4
 
 inner1_done:
@@ -158,30 +167,29 @@ middle:
 init1:
       addi  $t0, $t2, 1     # i = k + 1
       
-      multu $t2, $t5          # a0 * N
-      mflo  $v0               # v0 <= a0 * N
+      # s0 = &A[k][0]
+      multu $t2, $t5          # k * N
+      mflo  $v0               # v0 <= k * N
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      addu   $v0, $v0, $t3     # v0 <= v0 + A
-      
+      addu   $v0, $v0, $t3    # v0 <= v0 + A
       move  $s0, $v0
       
       # s1 = &A[i][0]
       multu $t0, $t5          # a0 * N
       mflo  $v0               # v0 <= a0 * N
       sll   $v0, $v0, 2       # v0 <= v0 * 4
-      # DB
-      addu   $v0, $v0, $t3     # v0 <= v0 + A
-      
+      addu   $v0, $v0, $t3    # v0 <= v0 + A
       move  $s1, $v0
+      
 inner2:
       beq   $t0, $t5, inner2_done  # i == N ?
-      # DB
+      # delay slot
       
       # s2 = &A[i][k]
       sll   $s2, $t2, 2     # s2 = k*4
       add   $s2, $s1, $s2   # s2 = &A[i][0] + k*4
     
-      # s3 = &A[i][0] + N * 4 <= slutadress
+      # s3 = &A[i][0] + N * 4 <= end address
       sll   $s3, $t5, 2
       add   $s3, $s1, $s3
     
@@ -194,32 +202,34 @@ inner2:
       addu  $s4, $s0, $s4
 
 inner3:
-      beq   $t1, $s3, inner3_done
-      nop
+      beq   $t1, $s3, inner3_done,  # j == end address? goto inner3_done
       
-      lwc1  $f2, ($s4)     # f2 <= *å
-      lwc1  $f3, ($s2)      # f3 <= *z
-      lwc1  $f4, ($t1)      # f4 <= *j
+      # floating point arithmetic
+      lwc1  $f2, ($s4)    # f2 <= *å
+      lwc1  $f3, ($s2)    # f3 <= *z
+      lwc1  $f4, ($t1)    # f4 <= *j
       mul.s $f2, $f2, $f3 # f2 *z * *å
       sub.s $f2, $f4, $f2 # j <= j - f2
       swc1  $f2, ($t1)
  
       addiu $t1, $t1, 4
       j inner3
-      # DB
+      # delay slot
       addiu $s4, $s4, 4
       
 inner3_done:
-      swc1 $f0, ($s2)
+      swc1 $f0, ($s2)   # A[i][k] = 0
       addiu $t0, $t0, 1 # i++
       j inner2
-      # DB
+      # delay slot
       move $s1, $s3
 # End of outer for-loop
+
 inner2_done:      
       j     outer1
-      # DB
+      # delay slot
       addi  $t2, $t2, 1       # k++
+
 outer1_done:
 # Restore shit from stack
       lw    $ra, ($sp) 
@@ -231,27 +241,9 @@ outer1_done:
       lw    $s3, 24($sp)
       lw    $s4, 28($sp)
       
-      jr    $ra         # jump to $ra
-      # DB
+      jr    $ra         # return to caller
+      # delay slot 
       addiu $sp, $sp, 32
-      
-##########################################################
-# fetchrow
-# hämtar adressen till ett matriselement A[x][0]
-# 
-# args:
-#   a0: row
-#   t5: N rader/kolumner i matrisen
-#   t3: A - basadress till matrisen
-##########################################################
-
-fetchrow:
-      multu $a0, $t5          # a0 * N
-      mflo  $v0               # v0 <= a0 * N
-      sll   $v0, $v0, 2       # v0 <= v0 * 4
-      jr   $ra                # return
-      # DB
-      addu   $v0, $v0, $t3     # v0 <= v0 + A
       
 #################### END OUR CODE
 ### End of text segment
@@ -263,12 +255,8 @@ spaces:
 		.asciiz "   "   			# spaces to insert between numbers
 newline:
 		.asciiz "\n"  				# newline
-		
-message:
-    .asciiz "HEIKON BACON"
     
-### Constants
-
+### Floating point constants
 zero: 
     .float 0      
 one:  
